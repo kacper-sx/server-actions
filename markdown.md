@@ -10,32 +10,32 @@ Next.js udostępnia programistom fajne techniki pobierania danych. Jedną z tech
 
 W komponentach serwerowych:
 
-```
+```tsx
 export default function OrderProducts() {
   async function addProductToOrder(product, orderId) {
     'use server'
 
-     await saveProduct({product, orderId});
+    await saveProduct({ product, orderId })
   }
 
-  return(
-     <form action={addProductToOrder}>
-       <button type="submit">Add Product</button>
-     </form>
+  return (
+    <form action={addProductToOrder}>
+      <button type='submit'>Add Product</button>
+    </form>
   )
 }
 ```
 
 w komponentach klienckich:
 
-```
+```tsx
 'use server'
 
 import { addProductToOrder } from '@/data/order'
 
 export async function addProduct(data, orderId) {
-  const response = await addProductToOrder(data, orderId);
-  return response;
+  const response = await addProductToOrder(data, orderId)
+  return response
 }
 ```
 
@@ -48,7 +48,7 @@ Zainteresowanych szczegółami odsyłamy do [dokumentacji](https://nextjs.org/do
 
 Załóżmy, że pracujemy nad najbardziej powszechnym problemem dodawania i wyświetlania dodanych produktów. Mamy do stworzenia formularz dodawania produktów oraz sekcję istniejących produktów. Zacznijmy więc od formularza:
 
-```
+```tsx
   <h1 className='text-3xl font-bold text-center'>Products Warehouse</h1>
     <form
       action={''}
@@ -75,20 +75,20 @@ Załóżmy, że pracujemy nad najbardziej powszechnym problemem dodawania i wyś
 
 Formularz prezentuje się następująco:
 
-![form](/post-app/public/form.png 'form')
+![form](/public/form.png 'form')
 
 Na potrzeby tego przykładu skorzystamy z [Mockapi](https://mockapi.io/). Zróbmy schemat składający się z 3 pól: id, products i price:
 
-![Generate schema](/post-app/public/create-schema.png 'Schema')
+![Generate schema](/public/create-schema.png 'Schema')
 
 następnie wygenerujmy dowolną ilość danych:
 
-![Generate data](/post-app/public/generate.png 'data')
+![Generate data](/public/generate.png 'data')
 
-Skro mamy gotowe dane pora je wyświetlić. Potrzebny nam będzie do tego interfejs reprezentujący pola danych, funkcja pobierająca dane poprzez API,
+Skro mamy gotowe dane pora je wyświetlić. Potrzebny nam będzie do tego interfejs reprezentujący pola daPnych, funkcja pobierająca dane poprzez API,
 oraz mechanizm przerabiający otrzmany json na ciągi znaków i wyświetlający je użytkownikowi. Nie zapomnijmy o zmianie serwerowego komponentu na asynchroniczny!
 
-```
+```tsx
 export interface Product {
   id?: number
   product: string
@@ -128,36 +128,36 @@ export default async function Home() {
 
 Po odświerzeniu strony powinniśmy zobaczyć pobrane dane:
 
-![data](/post-app/public/list-data.png 'data-list')
+![data](/public/list-data.png 'data-list')
 
 Skoto mamy już możliość podejrzenia danych napiszmy mechanizm tworzący nową pozycję na liście. Tutaj pojawiają się właśnie Server Acions.
 
-```
+```tsx
 const addProductsToDatabase = async (e: FormData) => {
-    'use server'
-    const product = e.get('product')?.toString()
-    const price = e.get('price')?.toString()
+  'use server'
+  const product = e.get('product')?.toString()
+  const price = e.get('price')?.toString()
 
-    if (!product || !price) return
+  if (!product || !price) return
 
-    const newProduct: Product = {
-      product,
-      price,
-    }
-    await fetch('https://6565bfe0eb8bb4b70ef24984.mockapi.io/products', {
-      method: 'POST',
-      body: JSON.stringify(newProduct),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    revalidateTag('products')
+  const newProduct: Product = {
+    product,
+    price,
   }
+  await fetch('https://6565bfe0eb8bb4b70ef24984.mockapi.io/products', {
+    method: 'POST',
+    body: JSON.stringify(newProduct),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+  revalidateTag('products')
+}
 ```
 
 następnie w akcji formularza:
 
-```
+```tsx
 <form action={addProductsToDatabase} className='flex flex-col gap-5 max-w-xl mx-auto p-5'>
 ```
 
@@ -165,8 +165,22 @@ Co się tutaj zadziało? Adnotacja `'use server'` sugeruje, że jest to akcja se
 
 Teraz po wypełnieniu formularza mamy szybką odpowiedź w postaci zaaktualizowanej listy produktów:
 
-![final-list](/post-app/public/final-list.png 'final-list')
+![final-list](/public/final-list.png 'final-list')
 
 ### Co z tego wynika?
 
 Warto stosować Server actions, w dużo którszym czasie mamy zaimplementowane funkcje zastępujące endpoity. Jest to mechanizm wydajny zarówno pod względem czasu implementacji jak i również czasu wykonania. Należy się łapka w górę Dobra robota Vercel jak chcecie to umiecie :)
+
+### Co tu można poprawić?
+
+Przykład pokazuje faktyczne zastosowanie server actions ale ze względu na to, że jesteśmy leniwi ale bardziej zapracowani nie uwzględniliśmy kilku ważnych programistycznie aspektów. Chcesz potrenować? No to "dajemy wędkę":
+
+1. Zadbaj o bezpieczeństwo
+   - dodaj walidację formularza po stronie klienta i serwera,
+   - zapobiegnij XSS wprowadzając sanitację,
+   - zadbaj o nagłówki - pomyśl o tokenach uwierzytelniających,
+2. Dodaj obsługę błędów przy żądaniach API
+3. Zadbaj o skalowalność:
+   - rozdziel kod na mniejsze pliki zwiększając czytelność pod kątem rozwoju aplikacji
+   - pomyśl o obsłudze pamięci podręcznej
+   - pomyśl o zarządzaniu stanem
